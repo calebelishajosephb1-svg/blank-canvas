@@ -13,7 +13,7 @@ import { buildDebuggerContext } from "@/lib/tutor/context";
 import type { TutorAction } from "@/lib/tutor/actions";
 
 export function Debugger({ active, onContext }: { active: boolean; onContext: (ctx: () => string) => void }) {
-  const [challenge, setChallenge] = useState<Challenge>(FIXED_CHALLENGES[2]);
+  const [challenge, setChallenge] = useState<Challenge>(FIXED_CHALLENGES[2]!);
   const [mode, setMode] = useState<CanvasMode>("pointer");
   const [ce, setCe] = useState<Counterexample | null>(null);
   const [hint, setHint] = useState<TraceHint | null>(null);
@@ -22,7 +22,7 @@ export function Debugger({ active, onContext }: { active: boolean; onContext: (c
   const [playing, setPlaying] = useState(false);
   const [highlights, setHighlights] = useState<Record<string, HighlightTone>>({});
   const [result, setResult] = useState<{ tone: "accept" | "reject"; title: string; body: string } | null>(null);
-  const { machine, commit, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
+  const { machine, commit, set, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
 
   const alphabet = challenge.alphabet;
   const dfa = useMemo(() => machineToDFA(machine, alphabet), [machine, alphabet]);
@@ -191,7 +191,7 @@ export function Debugger({ active, onContext }: { active: boolean; onContext: (c
               </div>
               <p className="mt-2 text-xs" style={{ color: "var(--ink-muted)" }}>
                 {step === 0
-                  ? `Start in ${trace.trace[0].state ?? "—"}.`
+                  ? `Start in ${trace.trace[0]?.state ?? "—"}.`
                   : trace.trace[step]
                     ? `Read "${trace.trace[step].symbol}" in ${trace.trace[step].fromState} → ${trace.trace[step].state}.`
                     : "Run stops here — a missing transition means reject."}
@@ -245,7 +245,7 @@ export function Debugger({ active, onContext }: { active: boolean; onContext: (c
           </button>
         </CanvasToolbar>
 
-        <DFACanvas machine={machine} onChange={commit} alphabet={alphabet} mode={mode} highlights={highlights} />
+        <DFACanvas machine={machine} onChange={commit} onTransientChange={set} alphabet={alphabet} mode={mode} highlights={highlights} />
 
         <div
           className="flex min-h-[64px] flex-col justify-center gap-1 px-4 py-3"

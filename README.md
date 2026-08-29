@@ -528,3 +528,43 @@ cd <repository-name>
 npm i
 npm run dev
 ```
+
+---
+
+## APPENDIX — RUNNING & DEPLOYING (v3.2, React/TanStack build)
+
+### AI Tutor: bring your own key (BYOK only)
+
+The Tutor has **no shared key and no server-side AI**. Open the Tutor panel
+(robot icon, top right) → settings, pick a provider (Anthropic, OpenAI,
+OpenRouter or Google AI Studio), choose a model, and paste your own API key.
+
+- The key is stored **only in your browser's `localStorage`** (`iale_byok`).
+- Requests go **directly from your browser to the provider** — nothing is
+  proxied through this app, so nobody else can see or pay for your usage.
+- If no key is entered, the Tutor simply does not respond. Every other module
+  (Discovery, Mutation Lab, Debugger, NFA Lab, Analytics) works fully offline.
+
+Because there is no server secret, there is nothing to configure in any hosting
+dashboard — no environment variables, no proxy function.
+
+### Deploying to Netlify
+
+1. Push the repo and connect it as a new Netlify site.
+2. Accept the settings from `netlify.toml` (build `npm run build`, publish
+   `.output/public`). No environment variables are required.
+3. Deploy. The Tutor works immediately for any student who supplies their own key.
+
+### Local development
+
+```bash
+npm install
+npm run dev      # http://localhost:8080
+```
+
+### Theme
+
+Light (`overcast`) and dark (`blueprint`) themes are both first-class. The
+choice is persisted in `localStorage` under `iale_theme` and applied before
+first paint, so there is no flash of the wrong theme on reload. With no stored
+choice, the OS `prefers-color-scheme` setting decides.

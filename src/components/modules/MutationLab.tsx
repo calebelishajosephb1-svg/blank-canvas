@@ -11,14 +11,14 @@ import { useCanvasShortcuts } from "@/lib/useCanvasShortcuts";
 import { buildMutationContext } from "@/lib/tutor/context";
 
 export function MutationLab({ active, onContext }: { active: boolean; onContext: (ctx: () => string) => void }) {
-  const [challenge, setChallenge] = useState<Challenge>(FIXED_CHALLENGES[0]);
+  const [challenge, setChallenge] = useState<Challenge>(FIXED_CHALLENGES[0]!);
   const [mode, setMode] = useState<CanvasMode>("pointer");
   const [diff, setDiff] = useState<LanguageDiff | null>(null);
   const [testStr, setTestStr] = useState("");
   const [testOut, setTestOut] = useState<string | null>(null);
   const [history, setHistory] = useState<{ at: number; machine: Machine; label: string }[]>([]);
   const original = useMemo(() => layoutMachine(dfaToMachine(challenge.dfa)), [challenge]);
-  const { machine, commit, replace, undo, redo, canUndo, canRedo } = useMachine(original);
+  const { machine, commit, set, replace, undo, redo, canUndo, canRedo } = useMachine(original);
 
   const alphabet = challenge.alphabet;
   const mutated = useMemo(() => machineToDFA(machine, alphabet), [machine, alphabet]);
@@ -172,7 +172,7 @@ export function MutationLab({ active, onContext }: { active: boolean; onContext:
           </div>
           <div className="flex min-h-0 flex-col">
             <div className="section-label px-3 py-2">Your mutation</div>
-            <DFACanvas machine={machine} onChange={commit} alphabet={alphabet} mode={mode} />
+            <DFACanvas machine={machine} onChange={commit} onTransientChange={set} alphabet={alphabet} mode={mode} />
           </div>
         </div>
 

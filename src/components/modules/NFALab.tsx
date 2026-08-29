@@ -75,7 +75,7 @@ export function NFALab() {
   const [index, setIndex] = useState(0);
   const [converted, setConverted] = useState<{ steps: string[]; stateCount: number } | null>(null);
   const [logStep, setLogStep] = useState(0);
-  const preset = PRESETS[index];
+  const preset = PRESETS[index]!;
 
   const nfaMachine = useMemo(() => {
     const dfaLike = {

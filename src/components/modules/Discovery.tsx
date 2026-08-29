@@ -32,7 +32,7 @@ export function Discovery({
   active: boolean;
   onContext: (ctx: () => string) => void;
 }) {
-  const [challenge, setChallenge] = useState<Challenge>(FIXED_CHALLENGES[0]);
+  const [challenge, setChallenge] = useState<Challenge>(FIXED_CHALLENGES[0]!);
   const [index, setIndex] = useState(1);
   const [extra, setExtra] = useState<Challenge[]>([]);
   const [examples, setExamples] = useState<{ str: string; accept: boolean }[]>([]);
@@ -45,7 +45,7 @@ export function Discovery({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [regex, setRegex] = useState("");
   const [regexErr, setRegexErr] = useState<string | null>(null);
-  const { machine, commit, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
+  const { machine, commit, set, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
   const saveTimer = useRef<number | null>(null);
 
   const alphabet = challenge.alphabet;
@@ -72,7 +72,7 @@ export function Discovery({
         ...shownRejected.map((str) => ({ str, accept: false })),
       ]);
       const save = Storage.loadDFA(`discovery:${ch.id}`).data;
-      if (save) replace(dfaToMachine(new (dfa.constructor as never)(save.dfa) as never, save.positions));
+      if (save) replace(dfaToMachine(new (dfa.constructor as new (a: unknown) => never)(save.dfa) as never, save.positions));
       else replace(starterMachine());
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -80,7 +80,7 @@ export function Discovery({
   );
 
   useEffect(() => {
-    setChallengeAndReset(FIXED_CHALLENGES[0], 1);
+    setChallengeAndReset(FIXED_CHALLENGES[0]!, 1);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -324,7 +324,7 @@ export function Discovery({
           </button>
         </CanvasToolbar>
 
-        <DFACanvas machine={machine} onChange={commit} alphabet={alphabet} mode={mode} highlights={highlights} />
+        <DFACanvas machine={machine} onChange={commit} onTransientChange={set} alphabet={alphabet} mode={mode} highlights={highlights} />
 
         <div
           className="flex min-h-[64px] flex-col justify-center gap-1 px-4 py-3"
