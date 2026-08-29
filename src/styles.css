@@ -569,3 +569,29 @@
     padding: 0 10px;
   }
 }
+
+/* ---- canvas view controls (zoom / pan / export) ---- */
+.canvas-view-controls {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border-subtle);
+  background: color-mix(in srgb, var(--bg-panel) 88%, transparent);
+  backdrop-filter: blur(6px);
+  box-shadow: var(--shadow-panel);
+}
+.canvas-zoom-readout {
+  min-width: 42px;
+  padding-right: 4px;
+  text-align: center;
+  font-family: var(--font-mono-family);
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}

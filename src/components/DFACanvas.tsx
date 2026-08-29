@@ -364,7 +364,9 @@ export function DFACanvas({
         viewBox={`0 0 ${CANVAS_W} ${CANVAS_H}`}
         preserveAspectRatio="xMidYMid meet"
         className="h-full w-full touch-none select-none"
-        style={{ cursor: mode === "state" ? "copy" : mode === "delete" ? "not-allowed" : "default" }}
+        style={{
+          cursor: panning ? "grabbing" : mode === "state" ? "copy" : mode === "delete" ? "not-allowed" : "default",
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={onPointerUp}
@@ -405,6 +407,7 @@ export function DFACanvas({
 
         <rect width={CANVAS_W} height={CANVAS_H} fill="url(#lab-grid)" />
 
+        <g ref={worldRef} transform={`translate(${view.x} ${view.y}) scale(${view.zoom})`}>
         {transFrom && ghost && byId(transFrom) && (
           <line
             x1={byId(transFrom)!.x}
@@ -506,14 +509,37 @@ export function DFACanvas({
             Click to add a state
           </text>
         )}
+        </g>
       </svg>
+
+      <div className="canvas-view-controls">
+        <button className="tool-btn" title="Zoom in (scroll up)" onClick={() => zoomAt(1.2)}>
+          <ZoomIn size={15} />
+        </button>
+        <button className="tool-btn" title="Zoom out (scroll down)" onClick={() => zoomAt(1 / 1.2)}>
+          <ZoomOut size={15} />
+        </button>
+        <button className="tool-btn" title="Reset view" onClick={resetView}>
+          <Maximize2 size={15} />
+        </button>
+        <button
+          className="tool-btn"
+          title="Export canvas as PNG"
+          onClick={() => {
+            void exportSvgToPng(svgRef.current, { filename: `${exportName}.png` });
+          }}
+        >
+          <Download size={15} />
+        </button>
+        <span className="canvas-zoom-readout">{Math.round(view.zoom * 100)}%</span>
+      </div>
 
       {pending && (
         <div
           className="absolute z-20 w-[min(280px,90%)] rounded-2xl border p-3"
           style={{
-            left: `min(calc(100% - 290px), ${(pending.x / CANVAS_W) * 100}%)`,
-            top: `min(calc(100% - 150px), ${(pending.y / CANVAS_H) * 100}%)`,
+            left: `min(calc(100% - 290px), ${toPct(pending.x, pending.y).left}%)`,
+            top: `min(calc(100% - 150px), ${toPct(pending.x, pending.y).top}%)`,
             background: "var(--bg-panel)",
             borderColor: "var(--border-strong)",
             boxShadow: "var(--shadow-panel)",
@@ -564,8 +590,8 @@ export function DFACanvas({
         <div
           className="absolute z-20 w-52 overflow-hidden rounded-xl border py-1 text-xs"
           style={{
-            left: `min(calc(100% - 215px), ${(menu.x / CANVAS_W) * 100}%)`,
-            top: `min(calc(100% - 160px), ${(menu.y / CANVAS_H) * 100}%)`,
+            left: `min(calc(100% - 215px), ${toPct(menu.x, menu.y).left}%)`,
+            top: `min(calc(100% - 160px), ${toPct(menu.x, menu.y).top}%)`,
             background: "var(--bg-panel)",
             borderColor: "var(--border-strong)",
             boxShadow: "var(--shadow-panel)",
