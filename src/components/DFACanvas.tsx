@@ -177,6 +177,19 @@ export function DFACanvas({
     return () => svg.removeEventListener("wheel", onWheel);
   }, []);
 
+  // Any tool switch must drop in-progress interaction state, otherwise the
+  // dangling transition ghost keeps following the cursor in other modes.
+  useEffect(() => {
+    setTransFrom(null);
+    setGhost(null);
+    setPending(null);
+    setMenu(null);
+    setRenaming(null);
+    setConfirmDelete(null);
+    setDragging(null);
+    setPanning(null);
+  }, [mode, editable]);
+
   const hitState = useCallback(
     (x: number, y: number) => machine.states.find((s) => Math.hypot(s.x - x, s.y - y) <= STATE_R + 4) ?? null,
     [machine.states],
@@ -297,7 +310,7 @@ export function DFACanvas({
       return;
     }
     const { x, y } = toLocal(e);
-    if (transFrom) setGhost({ x, y });
+    if (mode === "transition" && transFrom) setGhost({ x, y });
     if (!dragging || !editable) return;
     drag?.((prev) => ({
       ...prev,
@@ -366,7 +379,7 @@ export function DFACanvas({
         preserveAspectRatio="xMidYMid meet"
         className="h-full w-full touch-none select-none"
         style={{
-          cursor: panning ? "grabbing" : mode === "state" ? "copy" : mode === "delete" ? "not-allowed" : "default",
+          cursor: panning ? "grabbing" : mode === "state" ? "copy" : mode === "delete" ? "not-allowed" : mode === "transition" ? "crosshair" : "default",
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -409,7 +422,7 @@ export function DFACanvas({
         <rect width={CANVAS_W} height={CANVAS_H} fill="url(#lab-grid)" />
 
         <g ref={worldRef} transform={`translate(${view.x} ${view.y}) scale(${view.zoom})`}>
-        {transFrom && ghost && byId(transFrom) && (
+        {mode === "transition" && transFrom && ghost && byId(transFrom) && (
           <line
             x1={byId(transFrom)!.x}
             y1={byId(transFrom)!.y}
@@ -467,7 +480,7 @@ export function DFACanvas({
                 ? "var(--signal-blue)"
                 : "var(--border-strong)";
           return (
-            <g key={s.id} style={{ cursor: editable && mode === "pointer" ? "grab" : "inherit" }}>
+            <g key={s.id} style={{ cursor: editable && mode === "pointer" ? (dragging === s.id ? "grabbing" : "grab") : "inherit" }}>
               {s.isStart && (
                 <path
                   d={`M ${s.x - STATE_R - 30} ${s.y} L ${s.x - STATE_R - 5} ${s.y}`}
