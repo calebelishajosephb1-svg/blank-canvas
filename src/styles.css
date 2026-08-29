@@ -297,6 +297,70 @@
     opacity: 0.5;
   }
 
+  /* ── AI Tutor (bring-your-own-key) ───────────────────────────── */
+  .tutor-panel {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--bg-panel);
+    border-left: 1px solid var(--border-strong);
+  }
+  .tutor-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .tutor-settings {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px;
+    border-bottom: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--bg-panel-raised) 30%, transparent);
+  }
+  .tutor-thread {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+  }
+  .tutor-msg {
+    padding: 9px 11px;
+    border-radius: 12px;
+    font-size: 12.5px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+    border: 1px solid var(--border-subtle);
+    background: color-mix(in srgb, var(--bg-panel-raised) 32%, transparent);
+    color: var(--ink-primary);
+  }
+  .tutor-msg[data-role="user"] {
+    align-self: flex-end;
+    max-width: 92%;
+    background: var(--signal-blue);
+    color: var(--on-signal);
+    border-color: transparent;
+  }
+  .tutor-msg[data-role="error"] {
+    background: var(--signal-rose-15);
+    border-color: rgba(244, 63, 94, 0.4);
+    color: var(--signal-rose);
+  }
+  .tutor-compose {
+    display: flex;
+    gap: 6px;
+    padding: 10px 12px;
+    border-top: 1px solid var(--border-subtle);
+  }
+
+
   .field-input {
     height: 34px;
     width: 100%;
