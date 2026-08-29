@@ -486,14 +486,18 @@
     background: var(--canvas-bg);
   }
 
-  /* Side-by-side canvases: keep the 700x420 drawing aspect so the automaton
-     renders at a readable size instead of shrinking inside a tall column. */
+  /* Keep the 700x420 drawing aspect so the automaton renders at a readable
+     size (and pointer coordinates map 1:1) instead of letterboxing. */
   .dual-canvas .canvas-surface {
     flex: 0 1 auto;
     width: 100%;
     aspect-ratio: 700 / 420;
     max-height: 100%;
     margin-block: auto;
+  }
+
+  .dual-canvas > div {
+    background: var(--canvas-bg);
   }
 
   .section-label {
