@@ -121,7 +121,7 @@ export const BYOK_KEY = "iale_byok";
 
 export const DEFAULT_SETTINGS: TutorSettings = {
   provider: "anthropic",
-  model: PROVIDERS.anthropic.models[0],
+  model: PROVIDERS.anthropic.models[0]!,
   apiKey: "",
 };
 
@@ -134,7 +134,7 @@ export function loadSettings(): TutorSettings {
     const provider: ProviderId = parsed.provider && PROVIDERS[parsed.provider] ? parsed.provider : "anthropic";
     return {
       provider,
-      model: parsed.model || PROVIDERS[provider].models[0],
+      model: parsed.model || PROVIDERS[provider].models[0]!,
       apiKey: typeof parsed.apiKey === "string" ? parsed.apiKey : "",
     };
   } catch {
@@ -193,7 +193,7 @@ export async function askTutor(
     return { ok: false, error: "No API key yet — open the tutor settings and paste your own key." };
   }
   const p = PROVIDERS[settings.provider];
-  const model = settings.model || p.models[0];
+  const model = settings.model || p.models[0]!;
   const url = p.id === "google" ? `${p.endpoint}/${encodeURIComponent(model)}:generateContent` : p.endpoint;
 
   try {

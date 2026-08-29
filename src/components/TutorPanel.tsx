@@ -50,7 +50,7 @@ export function TutorPanel({
 
   function patch(next: Partial<TutorSettings>) {
     const merged = { ...settings, ...next };
-    if (next.provider && next.provider !== settings.provider) merged.model = PROVIDERS[next.provider].models[0];
+    if (next.provider && next.provider !== settings.provider) merged.model = PROVIDERS[next.provider].models[0] ?? merged.model;
     setSettings(merged);
     saveSettings(merged);
   }
