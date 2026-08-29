@@ -37,10 +37,11 @@ function modDFA(alphabet: string[], n: number, label: string, acceptResidues: nu
   const states = Array.from({ length: n }, (_, i) => `${label}${i}`);
   const delta: TransitionMap = {};
   states.forEach((s, i) => {
-    delta[s] = {};
-    for (const sym of alphabet) delta[s][sym] = `${label}${(i * alphabet.length + bitValue(sym)) % n}`;
+    const row: Record<string, string> = {};
+    for (const sym of alphabet) row[sym] = `${label}${(i * alphabet.length + bitValue(sym)) % n}`;
+    delta[s] = row;
   });
-  return { states, alphabet, start: states[0], accept: acceptResidues.map((r) => `${label}${r}`), delta };
+  return { states, alphabet, start: states[0] ?? `${label}0`, accept: acceptResidues.map((r) => `${label}${r}`), delta };
 }
 
 const BIN = ["0", "1"];
@@ -262,13 +263,13 @@ type GenType = "suffix" | "contains" | "notContains" | "countMod" | "lengthMod";
 export const challengeGenerator = {
   random(forceType?: GenType): Challenge | null {
     const types: GenType[] = ["suffix", "contains", "notContains", "countMod", "lengthMod"];
-    const type = forceType ?? types[Math.floor(Math.random() * types.length)];
+    const type = forceType ?? types[Math.floor(Math.random() * types.length)] ?? "suffix";
     const alphabet = BIN;
-    const rnd = () => alphabet[Math.floor(Math.random() * alphabet.length)];
+    const rnd = () => alphabet[Math.floor(Math.random() * alphabet.length)] ?? "0";
     const pattern = `${rnd()}${rnd()}${Math.random() < 0.4 ? rnd() : ""}`;
-    let regex: string;
-    let name: string;
-    let description: string;
+    let regex = "";
+    let name = "";
+    let description = "";
     let difficulty: Difficulty = "Medium";
 
     switch (type) {
