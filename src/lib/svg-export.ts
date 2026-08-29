@@ -41,7 +41,7 @@ export async function exportSvgToPng(
     clone.setAttribute("width", String(w));
     clone.setAttribute("height", String(h));
 
-    const bg = background ?? getComputedStyle(svg).getPropertyValue("--bg-canvas").trim() || "#ffffff";
+    const bg = background ?? (getComputedStyle(svg).getPropertyValue("--bg-canvas").trim() || "#ffffff");
     const markup = resolveVars(new XMLSerializer().serializeToString(clone), svg);
     const url = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
 
