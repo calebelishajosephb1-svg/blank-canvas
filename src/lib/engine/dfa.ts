@@ -114,8 +114,9 @@ export class DFA {
     }
     if (needSink) {
       states.push(sink);
-      transitions[sink] = {};
-      for (const sym of this.alphabet) transitions[sink][sym] = sink;
+      const sinkRow: Record<string, string> = {};
+      for (const sym of this.alphabet) sinkRow[sym] = sink;
+      transitions[sink] = sinkRow;
     }
     return new DFA({
       states,
