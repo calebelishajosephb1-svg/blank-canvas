@@ -8,6 +8,12 @@ import {
   type MachineTransition,
 } from "@/lib/machine";
 import { checkTransitionConflict } from "@/lib/engine/validate";
+import { exportSvgToPng } from "@/lib/svg-export";
+import { ZoomIn, ZoomOut, Maximize2, Download } from "lucide-react";
+
+const MIN_ZOOM = 0.4;
+const MAX_ZOOM = 3;
+const clampZoom = (z: number) => Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, z));
 
 export type CanvasMode = "pointer" | "state" | "transition" | "delete";
 export type HighlightTone = "blue" | "cyan" | "rose" | "amber";
@@ -29,6 +35,10 @@ interface Props {
   mode?: CanvasMode;
   highlights?: Record<string, HighlightTone>;
   activeTransition?: { from: string; to: string } | null;
+  /** Update without pushing an undo entry — used for every frame of a drag. */
+  onTransientChange?: (next: Machine | ((prev: Machine) => Machine)) => void;
+  /** Base filename for the PNG export. */
+  exportName?: string;
 }
 
 interface PendingEdge {
@@ -76,8 +86,11 @@ export function DFACanvas({
   mode = "pointer",
   highlights = {},
   activeTransition = null,
+  onTransientChange,
+  exportName = "automaton",
 }: Props) {
   const svgRef = useRef<SVGSVGElement>(null);
+  const worldRef = useRef<SVGGElement>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [dragging, setDragging] = useState<string | null>(null);
   const [transFrom, setTransFrom] = useState<string | null>(null);
@@ -86,17 +99,82 @@ export function DFACanvas({
   const [menu, setMenu] = useState<{ id: string; x: number; y: number } | null>(null);
   const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+  const [view, setView] = useState({ zoom: 1, x: 0, y: 0 });
+  const [panning, setPanning] = useState<{ px: number; py: number } | null>(null);
 
+  const drag = onTransientChange ?? onChange;
   const symbolChoices = allowEpsilon ? [...alphabet, "ε"] : alphabet;
 
+  /** Screen point -> canvas (world) coordinates, accounting for viewBox, pan and zoom. */
   const toLocal = useCallback((e: { clientX: number; clientY: number }) => {
     const svg = svgRef.current;
+    const world = worldRef.current;
     if (!svg) return { x: 0, y: 0 };
+    const ctm = world?.getScreenCTM();
+    if (ctm) {
+      const pt = svg.createSVGPoint();
+      pt.x = e.clientX;
+      pt.y = e.clientY;
+      const p = pt.matrixTransform(ctm.inverse());
+      return { x: p.x, y: p.y };
+    }
     const rect = svg.getBoundingClientRect();
     return {
       x: ((e.clientX - rect.left) / rect.width) * CANVAS_W,
       y: ((e.clientY - rect.top) / rect.height) * CANVAS_H,
     };
+  }, []);
+
+  /** Screen point -> untransformed viewBox coordinates (for pan maths + popovers). */
+  const toViewBox = useCallback((e: { clientX: number; clientY: number }) => {
+    const svg = svgRef.current;
+    if (!svg) return { x: 0, y: 0 };
+    const ctm = svg.getScreenCTM();
+    if (!ctm) return { x: 0, y: 0 };
+    const pt = svg.createSVGPoint();
+    pt.x = e.clientX;
+    pt.y = e.clientY;
+    const p = pt.matrixTransform(ctm.inverse());
+    return { x: p.x, y: p.y };
+  }, []);
+
+  /** World point -> percentage of the viewBox, so HTML popovers track the canvas. */
+  const toPct = useCallback(
+    (x: number, y: number) => ({
+      left: ((view.x + x * view.zoom) / CANVAS_W) * 100,
+      top: ((view.y + y * view.zoom) / CANVAS_H) * 100,
+    }),
+    [view],
+  );
+
+  const zoomAt = useCallback((factor: number, anchor?: { x: number; y: number }) => {
+    setView((v) => {
+      const next = clampZoom(v.zoom * factor);
+      if (next === v.zoom) return v;
+      const ax = anchor?.x ?? CANVAS_W / 2;
+      const ay = anchor?.y ?? CANVAS_H / 2;
+      const k = next / v.zoom;
+      return { zoom: next, x: ax - (ax - v.x) * k, y: ay - (ay - v.y) * k };
+    });
+  }, []);
+
+  const resetView = useCallback(() => setView({ zoom: 1, x: 0, y: 0 }), []);
+
+  // Non-passive wheel listener: React's onWheel is passive, so preventDefault is ignored there.
+  const wheelRef = useRef<(e: WheelEvent) => void>(() => {});
+  wheelRef.current = (e: WheelEvent) => {
+    const dy = e.deltaY * (e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? 100 : 1);
+    zoomAt(Math.exp(-dy * 0.0018), toViewBox(e));
+  };
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      wheelRef.current(e);
+    };
+    svg.addEventListener("wheel", onWheel, { passive: false });
+    return () => svg.removeEventListener("wheel", onWheel);
   }, []);
 
   const hitState = useCallback(
@@ -146,6 +224,13 @@ export function DFACanvas({
     setMenu(null);
     const { x, y } = toLocal(e);
     const hit = hitState(x, y);
+    // Middle button, or space/shift + drag, pans from anywhere.
+    if (e.button === 1 || e.shiftKey) {
+      const vb = toViewBox(e);
+      setPanning({ px: vb.x - view.x, py: vb.y - view.y });
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+      return;
+    }
     if (!editable) {
       setSelected(hit?.id ?? null);
       return;
@@ -192,15 +277,28 @@ export function DFACanvas({
     if (hit) {
       setSelected(hit.id);
       setDragging(hit.id);
+      if (onTransientChange) onChange?.((prev) => prev); // one undo entry per drag
+
       (e.target as Element).setPointerCapture?.(e.pointerId);
-    } else setSelected(null);
+    } else {
+      setSelected(null);
+      // Empty-space drag pans the canvas.
+      const vb = toViewBox(e);
+      setPanning({ px: vb.x - view.x, py: vb.y - view.y });
+      (e.currentTarget as Element).setPointerCapture?.(e.pointerId);
+    }
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
+    if (panning) {
+      const vb = toViewBox(e);
+      setView((v) => ({ ...v, x: vb.x - panning.px, y: vb.y - panning.py }));
+      return;
+    }
     const { x, y } = toLocal(e);
     if (transFrom) setGhost({ x, y });
     if (!dragging || !editable) return;
-    onChange?.((prev) => ({
+    drag?.((prev) => ({
       ...prev,
       states: prev.states.map((s) =>
         s.id === dragging
@@ -214,7 +312,10 @@ export function DFACanvas({
     }));
   };
 
-  const onPointerUp = () => setDragging(null);
+  const onPointerUp = () => {
+    setDragging(null);
+    setPanning(null);
+  };
 
   const applyPending = () => {
     if (!pending) return;
