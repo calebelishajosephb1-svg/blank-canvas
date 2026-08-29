@@ -11,7 +11,9 @@ function resolveVars(markup: string, scope: Element): string {
   for (let pass = 0; pass < 4 && VAR_RE.test(out); pass++) {
     VAR_RE.lastIndex = 0;
     out = out.replace(VAR_RE, (_m, token: string, fallback?: string) => {
-      if (!cache.has(token)) cache.set(token, style.getPropertyValue(token).trim());
+      // Values are substituted into XML attributes, so double quotes must go
+      // (computed font stacks look like: "JetBrains Mono", ui-monospace, monospace).
+      if (!cache.has(token)) cache.set(token, style.getPropertyValue(token).trim().replace(/"/g, "'"));
       return cache.get(token) || (fallback ?? "").trim() || "transparent";
     });
   }
