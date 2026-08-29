@@ -201,8 +201,9 @@ export async function askTutor(
       method: "POST",
       headers: p.headers(settings.apiKey.trim()),
       body: JSON.stringify(p.body(SYSTEM(moduleContext), messages, model)),
-      signal,
+      ...(signal ? { signal } : {}),
     });
+
 
     if (!res.ok) {
       const detail = (await res.text()).slice(0, 200);
