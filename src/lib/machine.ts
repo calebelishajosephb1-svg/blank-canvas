@@ -135,6 +135,11 @@ export function useMachine(initial: Machine = starterMachine()) {
     });
   }, []);
 
+  /** Update without creating a history entry (e.g. every frame of a drag). */
+  const set = useCallback((next: Machine | ((prev: Machine) => Machine)) => {
+    setMachine((prev) => (typeof next === "function" ? (next as (p: Machine) => Machine)(prev) : next));
+  }, []);
+
   const replace = useCallback((next: Machine) => {
     past.current = [];
     future.current = [];
@@ -168,5 +173,5 @@ export function useMachine(initial: Machine = starterMachine()) {
     [version],
   );
 
-  return { machine, commit, replace, undo, redo, ...flags };
+  return { machine, commit, set, replace, undo, redo, ...flags };
 }

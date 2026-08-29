@@ -45,7 +45,7 @@ export function Discovery({
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
   const [regex, setRegex] = useState("");
   const [regexErr, setRegexErr] = useState<string | null>(null);
-  const { machine, commit, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
+  const { machine, commit, set, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
   const saveTimer = useRef<number | null>(null);
 
   const alphabet = challenge.alphabet;
@@ -324,7 +324,7 @@ export function Discovery({
           </button>
         </CanvasToolbar>
 
-        <DFACanvas machine={machine} onChange={commit} alphabet={alphabet} mode={mode} highlights={highlights} />
+        <DFACanvas machine={machine} onChange={commit} onTransientChange={set} alphabet={alphabet} mode={mode} highlights={highlights} />
 
         <div
           className="flex min-h-[64px] flex-col justify-center gap-1 px-4 py-3"

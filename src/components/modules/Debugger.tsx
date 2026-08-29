@@ -22,7 +22,7 @@ export function Debugger({ active, onContext }: { active: boolean; onContext: (c
   const [playing, setPlaying] = useState(false);
   const [highlights, setHighlights] = useState<Record<string, HighlightTone>>({});
   const [result, setResult] = useState<{ tone: "accept" | "reject"; title: string; body: string } | null>(null);
-  const { machine, commit, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
+  const { machine, commit, set, replace, undo, redo, canUndo, canRedo } = useMachine(starterMachine());
 
   const alphabet = challenge.alphabet;
   const dfa = useMemo(() => machineToDFA(machine, alphabet), [machine, alphabet]);
@@ -245,7 +245,7 @@ export function Debugger({ active, onContext }: { active: boolean; onContext: (c
           </button>
         </CanvasToolbar>
 
-        <DFACanvas machine={machine} onChange={commit} alphabet={alphabet} mode={mode} highlights={highlights} />
+        <DFACanvas machine={machine} onChange={commit} onTransientChange={set} alphabet={alphabet} mode={mode} highlights={highlights} />
 
         <div
           className="flex min-h-[64px] flex-col justify-center gap-1 px-4 py-3"
